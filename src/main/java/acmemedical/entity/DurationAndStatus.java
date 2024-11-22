@@ -6,21 +6,27 @@
  */
 package acmemedical.entity;
 
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 //TODO DS01 - This class is not an entity however it can be embedded in other entities.  Add missing annotation.
+@Embeddable // DS01 - Defines this class as an embeddable type for JPA
 public class DurationAndStatus implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	// TODO DS02 - Add annotations
+	@Column(name = "start_date", nullable = false)
 	private LocalDateTime startDate;
 	
 	// TODO DS03 - Add annotations
+	@Column(name = "end_date", nullable = true)
 	private LocalDateTime endDate;
 
 	// TODO DS04 - Add annotations
+	@Column(name = "active", nullable = false)
 	private byte active;
 
 	public DurationAndStatus() {

@@ -6,6 +6,8 @@
  */
 package acmemedical.entity;
 
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 
 @SuppressWarnings("unused")
@@ -15,16 +17,27 @@ import java.io.Serializable;
  */
 //TODO MC01 - Add the missing annotations.
 //TODO MC02 - Do we need a mapped super class?  If so, which one?
+@Entity(name = "MedicalCertificate")
+@Table(name = "medical_certificate")
+@Access(AccessType.FIELD)
+@AttributeOverride(name = "id", column = @Column(name = "certificate_id"))
+@NamedQuery(name = MedicalCertificate.ID_CARD_QUERY_NAME, query = "SELECT mc FROM MedicalCertificate mc WHERE mc.id = :id")
 public class MedicalCertificate extends PojoBase implements Serializable {
 	private static final long serialVersionUID = 1L;
+	public static final String ID_CARD_QUERY_NAME = "MedicalCertificate.findById";
 	
 	// TODO MC03 - Add annotations for 1:1 mapping.  What should be the cascade and fetch types?
+	@OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
+	@JoinColumn(name = "training_id", nullable = false)
 	private MedicalTraining medicalTraining;
 
 	// TODO MC04 - Add annotations for M:1 mapping.  What should be the cascade and fetch types?
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "physician_id", nullable = false)
 	private Physician owner;
 
 	// TODO MC05 - Add annotations.
+	@Column(name = "signed", nullable = false)
 	private byte signed;
 
 	public MedicalCertificate() {

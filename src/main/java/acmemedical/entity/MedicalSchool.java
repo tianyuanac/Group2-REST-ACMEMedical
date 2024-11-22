@@ -6,6 +6,10 @@
  */
 package acmemedical.entity;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Objects;
@@ -18,16 +22,36 @@ import java.util.Set;
 //TODO MS02 - MedicalSchool has subclasses PublicSchool and PrivateSchool.  Look at Week 9 slides for InheritanceType.
 //TODO MS03 - Do we need a mapped super class?  If so, which one?
 //TODO MS04 - Add in JSON annotations to indicate different sub-classes of MedicalSchool
+@Entity(name = "MedicalSchool")
+@Table(name = "medical_school")
+@Access(AccessType.FIELD)
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "public", discriminatorType = DiscriminatorType.INTEGER)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+		@JsonSubTypes.Type(value = PublicSchool.class, name = "PublicSchool"),
+		@JsonSubTypes.Type(value = PrivateSchool.class, name = "PrivateSchool")
+})
+@AttributeOverride(name="id", column=@Column(name="school_id"))
+@NamedQuery(name = MedicalSchool.ALL_MEDICAL_SCHOOLS_QUERY_NAME, query = "SELECT ms FROM MedicalSchool ms")
+@NamedQuery(name = MedicalSchool.IS_DUPLICATE_QUERY_NAME, query = "SELECT COUNT(ms) FROM MedicalSchool ms WHERE ms.name = :name")
+@NamedQuery(name = MedicalSchool.SPECIFIC_MEDICAL_SCHOOL_QUERY_NAME, query = "SELECT ms FROM MedicalSchool ms WHERE ms.id = :param1")
 public abstract class MedicalSchool extends PojoBase implements Serializable {
 	private static final long serialVersionUID = 1L;
+	public static final String ALL_MEDICAL_SCHOOLS_QUERY_NAME = "MedicalSchool.findAll";
+	public static final String IS_DUPLICATE_QUERY_NAME = "MedicalSchool.isDuplicate";
+	public static final String SPECIFIC_MEDICAL_SCHOOL_QUERY_NAME = "MedicalSchool.findById";
 	
 	// TODO MS05 - Add the missing annotations.
+	@Column(name = "name", nullable = false, unique = true, length = 100)
 	private String name;
 
 	// TODO MS06 - Add the 1:M annotation.  What should be the cascade and fetch types?
+	@OneToMany(mappedBy = "school", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
 	private Set<MedicalTraining> medicalTrainings = new HashSet<>();
 
 	// TODO MS07 - Add missing annotation.
+	@Transient
 	private boolean isPublic;
 
 	public MedicalSchool() {

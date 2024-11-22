@@ -20,8 +20,9 @@ import jakarta.persistence.Embeddable;
  * The primary key class for the prescription database table.
  */
 //TODO PRPK01 - What annotation is used to define an object which can be embedded in other entities?
-//Hint - @Access is used to establish where the annotation for JPA will be placed, field or properties. 
-@Access(AccessType.FIELD)
+//Hint - @Access is used to establish where the annotation for JPA will be placed, field or properties.
+@Embeddable // PRPK01 - Defines this class as an embeddable object for composite keys
+@Access(AccessType.FIELD) // Specifies that JPA will use field access for annotations
 public class PrescriptionPK implements Serializable {
 	// Default serial version id, required for serializable classes.
 	private static final long serialVersionUID = 1L;

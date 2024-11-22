@@ -7,6 +7,9 @@
  */
 package acmemedical.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.security.Principal;
 import java.util.HashSet;
@@ -20,23 +23,47 @@ import java.util.Set;
  */
 
 //TODO SU01 - Make this into JPA entity and add all the necessary annotations inside the class.
+@Entity(name = "SecurityUser")
+@Table(name = "security_user")
+@NamedQuery(
+        name = "SecurityUser.userByName",
+        query = "SELECT su FROM SecurityUser su WHERE su.username = :param1"
+)
+@NamedQuery(
+        name = "SecurityUser.userByPhysicianId",
+        query = "SELECT su FROM SecurityUser su WHERE su.physician.id = :param1"
+)
 public class SecurityUser implements Serializable, Principal {
     /** Explicit set serialVersionUID */
     private static final long serialVersionUID = 1L;
 
     //TODO SU02 - Add annotations.
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     protected int id;
     
     //TODO SU03 - Add annotations.
+    @Column(name = "username", nullable = false, unique = true, length = 50)
     protected String username;
     
     //TODO SU04 - Add annotations.
+    @Column(name = "password_hash", nullable = false)
     protected String pwHash;
     
     //TODO SU05 - Add annotations.
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = true)
+    @JoinColumn(name = "physician_id", referencedColumnName = "id")
+    @JsonIgnore
     protected Physician physician;
     
     //TODO SU06 - Add annotations.
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @JoinTable(
+            name = "user_has_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
     protected Set<SecurityRole> roles = new HashSet<SecurityRole>();
 
     public SecurityUser() {
