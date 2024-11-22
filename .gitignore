@@ -1,0 +1,15 @@
+# Ignore IntelliJ IDEA project files
+.idea/
+.settings/
+
+# Ignore target build directory
+target/
+
+# Ignore classpath and project metadata
+.classpath
+.project
+
+# Ignore other common system files
+.DS_Store
+Thumbs.db
+*.log
