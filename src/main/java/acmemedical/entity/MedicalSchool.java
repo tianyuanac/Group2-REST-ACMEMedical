@@ -6,6 +6,8 @@
  */
 package acmemedical.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.persistence.*;
@@ -27,14 +29,14 @@ import java.util.Set;
 @Access(AccessType.FIELD)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "public", discriminatorType = DiscriminatorType.INTEGER)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "entity-type")
 @JsonSubTypes({
 		@JsonSubTypes.Type(value = PublicSchool.class, name = "PublicSchool"),
 		@JsonSubTypes.Type(value = PrivateSchool.class, name = "PrivateSchool")
 })
 @AttributeOverride(name="id", column=@Column(name="school_id"))
 @NamedQuery(name = MedicalSchool.ALL_MEDICAL_SCHOOLS_QUERY_NAME, query = "SELECT ms FROM MedicalSchool ms")
-@NamedQuery(name = MedicalSchool.IS_DUPLICATE_QUERY_NAME, query = "SELECT COUNT(ms) FROM MedicalSchool ms WHERE ms.name = :name")
+@NamedQuery(name = MedicalSchool.IS_DUPLICATE_QUERY_NAME, query = "SELECT COUNT(ms) FROM MedicalSchool ms WHERE ms.name = :param1")
 @NamedQuery(name = MedicalSchool.SPECIFIC_MEDICAL_SCHOOL_QUERY_NAME, query = "SELECT ms FROM MedicalSchool ms WHERE ms.id = :param1")
 public abstract class MedicalSchool extends PojoBase implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -64,6 +66,7 @@ public abstract class MedicalSchool extends PojoBase implements Serializable {
     }
 
 	// TODO MS08 - Is an annotation needed here?
+	@JsonManagedReference(value = "medicalTrainings-school")
 	public Set<MedicalTraining> getMedicalTrainings() {
 		return medicalTrainings;
 	}

@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
@@ -131,6 +132,7 @@ public class Medicine extends PojoBase implements Serializable {
 		this.genericName = genericName;
 	}
 
+	@JsonManagedReference(value = "prescription-medicine")
 	public Set<Prescription> getPrescriptions() {
 		return prescriptions;
 	}

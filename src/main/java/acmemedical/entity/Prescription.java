@@ -9,6 +9,8 @@ package acmemedical.entity;
 import java.io.Serializable;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Basic;
@@ -76,6 +78,7 @@ public class Prescription extends PojoBaseCompositeKey<PrescriptionPK> implement
 		this.id = id;
 	}
 
+	@JsonBackReference(value = "prescription-physician")
 	public Physician getPhysician() {
 		return physician;
 	}
@@ -85,6 +88,7 @@ public class Prescription extends PojoBaseCompositeKey<PrescriptionPK> implement
 		this.physician = physician;
 	}
 
+	@JsonBackReference(value = "prescription-patient")
 	public Patient getPatient() {
 		return patient;
 	}
@@ -94,6 +98,7 @@ public class Prescription extends PojoBaseCompositeKey<PrescriptionPK> implement
 		this.patient = patient;
 	}
 
+	@JsonBackReference(value = "prescription-medicine")
 	public Medicine getMedicine() {
 		return medicine;
 	}

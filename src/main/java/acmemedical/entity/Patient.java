@@ -6,6 +6,7 @@
  */
 package acmemedical.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -38,15 +39,15 @@ public class Patient extends PojoBase implements Serializable {
 	private int year;
 
 	// TODO PA06 - Add missing annotations.
-	@Column(name = "address", length = 255)
+	@Column(name = "home_address", length = 255)
 	private String address;
 
 	// TODO PA07 - Add missing annotations.
-	@Column(name = "height", nullable = false)
+	@Column(name = "height_cm", nullable = false)
 	private int height;
 
 	// TODO PA08 - Add missing annotations.
-	@Column(name = "weight", nullable = false)
+	@Column(name = "weight_kg", nullable = false)
 	private int weight;
 
 	// TODO PA09 - Add missing annotations.
@@ -138,7 +139,8 @@ public class Patient extends PojoBase implements Serializable {
 	public void setSmoker(byte smoker) {
 		this.smoker = smoker;
 	}
-	
+
+	@JsonManagedReference(value = "prescription-patient")
 	public Set<Prescription> getPrescriptions() {
 		return prescriptions;
 	}

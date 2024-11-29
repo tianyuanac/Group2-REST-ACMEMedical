@@ -6,6 +6,9 @@
  */
 package acmemedical.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -51,6 +54,7 @@ public class MedicalCertificate extends PojoBase implements Serializable {
 		this.signed = signed;
 	}
 
+	@JsonIgnore
 	public MedicalTraining getMedicalTraining() {
 		return medicalTraining;
 	}
@@ -59,6 +63,7 @@ public class MedicalCertificate extends PojoBase implements Serializable {
 		this.medicalTraining = medicalTraining;
 	}
 
+	@JsonBackReference(value = "certificate-physician")
 	public Physician getOwner() {
 		return owner;
 	}
@@ -71,13 +76,15 @@ public class MedicalCertificate extends PojoBase implements Serializable {
 		return signed;
 	}
 
+	@JsonProperty("signed")
 	public void setSigned(byte signed) {
 		this.signed = signed;
 	}
 
-	public void setSigned(boolean signed) {
-		this.signed = (byte) (signed ? 0b0001 : 0b0000);
-	}
+//	@JsonProperty("signedAsBoolean")
+//	public void setSigned(boolean signed) {
+//		this.signed = (byte) (signed ? 0b0001 : 0b0000);
+//	}
 	
 	//Inherited hashCode/equals is sufficient for this entity class
 

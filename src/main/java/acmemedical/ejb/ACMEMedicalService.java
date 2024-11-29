@@ -38,6 +38,7 @@ import java.util.Set;
 import jakarta.ejb.Singleton;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -114,7 +115,7 @@ public class ACMEMedicalService implements Serializable {
                 .getSingleResult();
         userForNewPhysician.getRoles().add(userRole);
         userRole.getUsers().add(userForNewPhysician);
-        em.persist(userForNewPhysician);
+        em.merge(userForNewPhysician);
     }
 
     @Transactional
@@ -281,5 +282,90 @@ public class ACMEMedicalService implements Serializable {
         }
         return medicalTrainingToBeUpdated;
     }
-    
+
+    // CRUD for Patient
+    public List<Patient> getAllPatients() {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Patient> cq = cb.createQuery(Patient.class);
+        cq.select(cq.from(Patient.class));
+        return em.createQuery(cq).getResultList();
+    }
+
+    public Patient getPatientById(int id) {
+        return em.find(Patient.class, id);
+    }
+
+    @Transactional
+    public Patient persistPatient(Patient newPatient) {
+        em.persist(newPatient);
+        return newPatient;
+    }
+
+    @Transactional
+    public Patient updatePatient(int id, Patient updatedPatient) {
+        Patient patientToBeUpdated = getPatientById(id);
+        if (patientToBeUpdated != null) {
+            em.refresh(patientToBeUpdated);
+            patientToBeUpdated.setFirstName(updatedPatient.getFirstName());
+            patientToBeUpdated.setLastName(updatedPatient.getLastName());
+            patientToBeUpdated.setYear(updatedPatient.getYear());
+            patientToBeUpdated.setAddress(updatedPatient.getAddress());
+            patientToBeUpdated.setHeight(updatedPatient.getHeight());
+            patientToBeUpdated.setWeight(updatedPatient.getWeight());
+            patientToBeUpdated.setSmoker(updatedPatient.getSmoker());
+            em.merge(patientToBeUpdated);
+            em.flush();
+        }
+        return patientToBeUpdated;
+    }
+
+    @Transactional
+    public void deletePatientById(int id) {
+        Patient patient = getPatientById(id);
+        if (patient != null) {
+            em.refresh(patient);
+            em.remove(patient);
+        }
+    }
+
+    // CRUD for Medicine
+    public List<Medicine> getAllMedicines() {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Medicine> cq = cb.createQuery(Medicine.class);
+        cq.select(cq.from(Medicine.class));
+        return em.createQuery(cq).getResultList();
+    }
+
+    public Medicine getMedicineById(int id) {
+        return em.find(Medicine.class, id);
+    }
+
+    @Transactional
+    public Medicine persistMedicine(Medicine newMedicine) {
+        em.persist(newMedicine);
+        return newMedicine;
+    }
+
+    @Transactional
+    public Medicine updateMedicine(int id, Medicine updatedMedicine) {
+        Medicine medicineToBeUpdated = getMedicineById(id);
+        if (medicineToBeUpdated != null) {
+            em.refresh(medicineToBeUpdated);
+            medicineToBeUpdated.setDrugName(updatedMedicine.getDrugName());
+            medicineToBeUpdated.setManufacturerName(updatedMedicine.getManufacturerName());
+            medicineToBeUpdated.setDosageInformation(updatedMedicine.getDosageInformation());
+            em.merge(medicineToBeUpdated);
+            em.flush();
+        }
+        return medicineToBeUpdated;
+    }
+
+    @Transactional
+    public void deleteMedicineById(int id) {
+        Medicine medicine = getMedicineById(id);
+        if (medicine != null) {
+            em.refresh(medicine);
+            em.remove(medicine);
+        }
+    }
 }

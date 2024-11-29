@@ -21,14 +21,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.EJB;
 import jakarta.inject.Inject;
 import jakarta.security.enterprise.SecurityContext;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -115,5 +108,23 @@ public class PhysicianResource {
         response = Response.ok(medicine).build();
         return response;
     }
-    
+
+    @DELETE
+    @Path(RESOURCE_PATH_ID_PATH)
+    @RolesAllowed({ADMIN_ROLE})
+    public Response deletePhysician(@PathParam(RESOURCE_PATH_ID_ELEMENT) int id) {
+        LOG.debug("Attempting to delete physician with ID: " + id);
+        Physician physician = service.getPhysicianById(id);
+
+        if (physician == null) {
+            LOG.warn("Physician with ID " + id + " not found.");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Physician not found with ID: " + id)
+                    .build();
+        }
+
+        service.deletePhysicianById(id);
+        LOG.info("Physician with ID " + id + " successfully deleted.");
+        return Response.noContent().build();
+    }
 }

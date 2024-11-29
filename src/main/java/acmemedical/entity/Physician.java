@@ -21,7 +21,7 @@ import java.util.Set;
 //TODO PH01 - Add the missing annotations.
 //TODO PH02 - Do we need a mapped super class? If so, which one?
 @Entity(name = "Physician")
-@Table(name = "physician", schema = "rest_acmem")
+@Table(name = "physician")
 @Access(AccessType.FIELD)
 @NamedQuery(name = "Physician.ALL_PHYSICIANS_QUERY_NAME", query = "SELECT p FROM Physician p")
 public class Physician extends PojoBase implements Serializable {
@@ -65,7 +65,7 @@ public class Physician extends PojoBase implements Serializable {
 	}
 
 	// TODO PH07 - Is an annotation needed here?
-	@JsonManagedReference
+	@JsonManagedReference(value = "certificate-physician")
     public Set<MedicalCertificate> getMedicalCertificates() {
 		return medicalCertificates;
 	}
@@ -75,7 +75,7 @@ public class Physician extends PojoBase implements Serializable {
 	}
 
 	// TODO PH08 - Is an annotation needed here?
-	@JsonManagedReference
+	@JsonManagedReference(value = "prescription-physician")
     public Set<Prescription> getPrescriptions() {
 		return prescriptions;
 	}
