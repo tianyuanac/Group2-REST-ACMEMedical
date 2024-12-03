@@ -26,9 +26,19 @@ import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
+import java.time.LocalDateTime;
 
 import acmemedical.entity.*;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -47,16 +57,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.util.Map;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import java.io.IOException;
-
-@SuppressWarnings("unused")
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class TestACMEMedicalSystem {
@@ -86,9 +86,12 @@ public class TestACMEMedicalSystem {
     }
 
     protected WebTarget webTarget;
+    
     @BeforeEach
     public void setUp() {
-        Client client = ClientBuilder.newClient().register(MyObjectMapperProvider.class).register(new LoggingFeature());
+        Client client = ClientBuilder.newClient()
+            .register(new LoggingFeature())
+            .register(new ObjectMapperContextResolver());
         webTarget = client.target(uri);
     }
 
@@ -360,5 +363,534 @@ public class TestACMEMedicalSystem {
             .request()
             .get();
         assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test18_create_medical_certificate_with_adminrole() {
+        MedicalCertificate newCertificate = new MedicalCertificate();
+        newCertificate.setSigned((byte)1);
+        
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalcertificate")
+            .request()
+            .post(Entity.json(newCertificate));
+        assertThat(response.getStatus(), is(oneOf(200, 201)));
+    }
+
+    @Test
+    public void test19_create_medical_certificate_with_userrole_should_fail() {
+        MedicalCertificate newCertificate = new MedicalCertificate();
+        newCertificate.setSigned((byte)0);
+        
+        Response response = webTarget
+            .register(userAuth)
+            .path("medicalcertificate")
+            .request()
+            .post(Entity.json(newCertificate));
+        assertThat(response.getStatus(), is(403));
+    }
+
+    @Test
+    public void test20_get_all_medical_trainings() {
+        Response response = webTarget
+            .register(userAuth)
+            .path("medicaltraining")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(200));
+        List<MedicalTraining> trainings = response.readEntity(new GenericType<List<MedicalTraining>>(){});
+        assertThat(trainings, is(not(nullValue())));
+    }
+
+    @Test
+    public void test21_get_medical_training_by_id() {
+        Response response = webTarget
+            .register(userAuth)
+            .path("medicaltraining/1")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test22_create_medical_training_with_adminrole() {
+        MedicalTraining newTraining = new MedicalTraining();
+        DurationAndStatus durationAndStatus = new DurationAndStatus();
+        durationAndStatus.setStartDate(LocalDateTime.now());
+        durationAndStatus.setEndDate(LocalDateTime.now().plusMonths(6));
+        durationAndStatus.setActive((byte)1);
+        newTraining.setDurationAndStatus(durationAndStatus);
+        
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicaltraining")
+            .request()
+            .post(Entity.json(newTraining));
+        assertThat(response.getStatus(), is(oneOf(200, 201)));
+    }
+
+    @Test
+    public void test23_update_physician_with_adminrole() {
+        // First get an existing physician
+        Response getResponse = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1")
+            .request()
+            .get();
+        
+        if (getResponse.getStatus() == 200) {
+            Physician physician = getResponse.readEntity(Physician.class);
+            physician.setFirstName("UpdatedFirstName");
+            
+            Response updateResponse = webTarget
+                .register(adminAuth)
+                .path(PHYSICIAN_RESOURCE_NAME + "/1")
+                .request()
+                .put(Entity.json(physician));
+            assertThat(updateResponse.getStatus(), is(oneOf(200, 204)));
+        }
+    }
+
+    @Test
+    public void test24_update_physician_with_userrole_should_fail() {
+        Physician physician = new Physician();
+        physician.setFirstName("UpdatedName");
+        physician.setLastName("UpdatedLastName");
+        
+        Response response = webTarget
+            .register(userAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1")
+            .request()
+            .put(Entity.json(physician));
+        assertThat(response.getStatus(), is(403));
+    }
+
+    @Test
+    public void test25_get_prescriptions_for_physician_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1/prescriptions")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test26_add_prescription_to_physician_with_adminrole() {
+        // First get a physician and a patient
+        Response physicianResponse = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1")
+            .request()
+            .get();
+        
+        Response patientResponse = webTarget
+            .register(adminAuth)
+            .path("patient/1")
+            .request()
+            .get();
+        
+        if (physicianResponse.getStatus() == 200 && patientResponse.getStatus() == 200) {
+            Physician physician = physicianResponse.readEntity(Physician.class);
+            Patient patient = patientResponse.readEntity(Patient.class);
+            
+            Prescription newPrescription = new Prescription();
+            newPrescription.setPhysician(physician);
+            newPrescription.setPatient(patient);
+            newPrescription.setNumberOfRefills(3);
+            newPrescription.setPrescriptionInformation("Take twice daily after meals");
+            
+            Response response = webTarget
+                .register(adminAuth)
+                .path(PHYSICIAN_RESOURCE_NAME + "/1/prescriptions")
+                .request()
+                .post(Entity.json(newPrescription));
+            assertThat(response.getStatus(), is(oneOf(200, 201, 404)));
+        }
+    }
+
+    @Test
+    public void test27_get_certificates_for_physician_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1/certificates")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test28_add_certificate_to_physician_with_adminrole() {
+        MedicalCertificate newCertificate = new MedicalCertificate();
+        newCertificate.setSigned((byte)1);
+        
+        Response response = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1/certificates")
+            .request()
+            .post(Entity.json(newCertificate));
+        assertThat(response.getStatus(), is(oneOf(200, 201, 404)));
+    }
+
+    @Test
+    public void test29_get_medical_trainings_for_physician_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1/trainings")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test30_add_training_to_physician_with_adminrole() {
+        MedicalTraining newTraining = new MedicalTraining();
+        DurationAndStatus durationAndStatus = new DurationAndStatus();
+        durationAndStatus.setStartDate(LocalDateTime.now());
+        durationAndStatus.setEndDate(LocalDateTime.now().plusMonths(6));
+        durationAndStatus.setActive((byte)1);
+        newTraining.setDurationAndStatus(durationAndStatus);
+        
+        Response response = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1/trainings")
+            .request()
+            .post(Entity.json(newTraining));
+        assertThat(response.getStatus(), is(oneOf(200, 201, 404)));
+    }
+
+    @Test
+    public void test31_get_patients_for_physician_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1/patients")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test32_add_patient_to_physician_with_adminrole() {
+        Patient newPatient = new Patient();
+        newPatient.setFirstName("New");
+        newPatient.setLastName("Patient");
+        newPatient.setYear(1995);
+        
+        Response response = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1/patients")
+            .request()
+            .post(Entity.json(newPatient));
+        assertThat(response.getStatus(), is(oneOf(200, 201, 404)));
+    }
+
+    @Test
+    public void test33_update_medical_certificate_with_adminrole() {
+        // First get an existing certificate
+        Response getResponse = webTarget
+            .register(adminAuth)
+            .path("medicalcertificate/1")
+            .request()
+            .get();
+        
+        if (getResponse.getStatus() == 200) {
+            MedicalCertificate certificate = getResponse.readEntity(MedicalCertificate.class);
+            certificate.setSigned((byte)1);
+            
+            Response response = webTarget
+                .register(adminAuth)
+                .path("medicalcertificate/1")
+                .request()
+                .put(Entity.json(certificate));
+            assertThat(response.getStatus(), is(oneOf(200, 204, 404)));
+        }
+    }
+
+    @Test
+    public void test34_delete_medical_certificate_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalcertificate/1")
+            .request()
+            .delete();
+        assertThat(response.getStatus(), is(oneOf(200, 204, 404)));
+    }
+
+    @Test
+    public void test35_create_medical_school_with_adminrole() {
+        PublicSchool newSchool = new PublicSchool();
+        newSchool.setName("Test Public Medical School");
+
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalschool")
+            .request()
+            .post(Entity.json(newSchool));
+        assertThat(response.getStatus(), is(oneOf(200, 201)));
+    }
+
+    @Test
+    public void test36_create_private_medical_school_with_adminrole() {
+        PrivateSchool newSchool = new PrivateSchool();
+        newSchool.setName("Test Private Medical School");
+
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalschool")
+            .request()
+            .post(Entity.json(newSchool));
+        assertThat(response.getStatus(), is(oneOf(200, 201)));
+    }
+
+    @Test
+    public void test37_update_medical_school_with_adminrole() {
+        PublicSchool school = new PublicSchool();
+        school.setName("Updated Medical School");
+
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalschool/1")
+            .request()
+            .put(Entity.json(school));
+        assertThat(response.getStatus(), is(oneOf(200, 204, 404)));
+    }
+
+    @Test
+    public void test38_delete_medical_school_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalschool/1")
+            .request()
+            .delete();
+        assertThat(response.getStatus(), is(oneOf(200, 204, 404)));
+    }
+
+    @Test
+    public void test39_get_all_prescriptions_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("prescription")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(200));
+        List<Prescription> prescriptions = response.readEntity(new GenericType<List<Prescription>>(){});
+        assertThat(prescriptions, is(not(nullValue())));
+    }
+
+    @Test
+    public void test40_get_prescription_by_id_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("prescription/1")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test41_create_prescription_with_adminrole() {
+        // First get a physician and a patient
+        Response physicianResponse = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1")
+            .request()
+            .get();
+        
+        Response patientResponse = webTarget
+            .register(adminAuth)
+            .path("patient/1")
+            .request()
+            .get();
+        
+        if (physicianResponse.getStatus() == 200 && patientResponse.getStatus() == 200) {
+            Physician physician = physicianResponse.readEntity(Physician.class);
+            Patient patient = patientResponse.readEntity(Patient.class);
+            
+            Prescription newPrescription = new Prescription();
+            newPrescription.setPhysician(physician);
+            newPrescription.setPatient(patient);
+            newPrescription.setNumberOfRefills(3);
+            newPrescription.setPrescriptionInformation("Take twice daily after meals");
+            
+            Response response = webTarget
+                .register(adminAuth)
+                .path("prescription")
+                .request()
+                .post(Entity.json(newPrescription));
+            assertThat(response.getStatus(), is(oneOf(200, 201)));
+        }
+    }
+
+    @Test
+    public void test42_update_prescription_with_adminrole() {
+        // First get an existing prescription
+        Response getResponse = webTarget
+            .register(adminAuth)
+            .path("prescription/1")
+            .request()
+            .get();
+        
+        if (getResponse.getStatus() == 200) {
+            Prescription prescription = getResponse.readEntity(Prescription.class);
+            prescription.setNumberOfRefills(5);
+            prescription.setPrescriptionInformation("Updated: Take three times daily");
+            
+            Response response = webTarget
+                .register(adminAuth)
+                .path("prescription/1")
+                .request()
+                .put(Entity.json(prescription));
+            assertThat(response.getStatus(), is(oneOf(200, 204, 404)));
+        }
+    }
+
+    @Test
+    public void test43_delete_prescription_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("prescription/1")
+            .request()
+            .delete();
+        assertThat(response.getStatus(), is(oneOf(200, 204, 404)));
+    }
+
+    @Test
+    public void test44_get_medical_trainings_by_school_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalschool/1/trainings")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test45_add_training_to_school_with_adminrole() {
+        MedicalTraining newTraining = new MedicalTraining();
+        DurationAndStatus durationAndStatus = new DurationAndStatus();
+        durationAndStatus.setStartDate(LocalDateTime.now());
+        durationAndStatus.setEndDate(LocalDateTime.now().plusMonths(6));
+        durationAndStatus.setActive((byte)1);
+        newTraining.setDurationAndStatus(durationAndStatus);
+        
+        Response response = webTarget
+            .register(adminAuth)
+            .path("medicalschool/1/trainings")
+            .request()
+            .post(Entity.json(newTraining));
+        assertThat(response.getStatus(), is(oneOf(200, 201, 404)));
+    }
+
+    @Test
+    public void test46_get_medicines_for_prescription_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("prescription/1/medicines")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test47_add_medicine_to_prescription_with_adminrole() {
+        // First create a medicine
+        Medicine medicine = new Medicine();
+        medicine.setDrugName("Test Medicine");
+        medicine.setManufacturerName("Test Manufacturer");
+        medicine.setDosageInformation("Take twice daily");
+        medicine.setGenericName("Test Generic");
+        
+        Response medicineResponse = webTarget
+            .register(adminAuth)
+            .path("medicine")
+            .request()
+            .post(Entity.json(medicine));
+        
+        if (medicineResponse.getStatus() == 200 || medicineResponse.getStatus() == 201) {
+            Medicine createdMedicine = medicineResponse.readEntity(Medicine.class);
+            
+            // Now get an existing prescription
+            Response prescriptionResponse = webTarget
+                .register(adminAuth)
+                .path("prescription/1")
+                .request()
+                .get();
+            
+            if (prescriptionResponse.getStatus() == 200) {
+                Prescription prescription = prescriptionResponse.readEntity(Prescription.class);
+                prescription.setMedicine(createdMedicine);
+                
+                Response updateResponse = webTarget
+                    .register(adminAuth)
+                    .path("prescription/1")
+                    .request()
+                    .put(Entity.json(prescription));
+                assertThat(updateResponse.getStatus(), is(oneOf(200, 204)));
+            }
+        }
+    }
+
+    @Test
+    public void test48_get_patient_prescriptions_with_adminrole() {
+        Response response = webTarget
+            .register(adminAuth)
+            .path("patient/1/prescriptions")
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(oneOf(200, 404)));
+    }
+
+    @Test
+    public void test49_add_prescription_to_patient_with_adminrole() {
+        // First get a physician
+        Response physicianResponse = webTarget
+            .register(adminAuth)
+            .path(PHYSICIAN_RESOURCE_NAME + "/1")
+            .request()
+            .get();
+        
+        if (physicianResponse.getStatus() == 200) {
+            Physician physician = physicianResponse.readEntity(Physician.class);
+            
+            Prescription newPrescription = new Prescription();
+            newPrescription.setPhysician(physician);
+            newPrescription.setNumberOfRefills(2);
+            newPrescription.setPrescriptionInformation("Patient specific instructions");
+            
+            Response response = webTarget
+                .register(adminAuth)
+                .path("patient/1/prescriptions")
+                .request()
+                .post(Entity.json(newPrescription));
+            assertThat(response.getStatus(), is(oneOf(200, 201, 404)));
+        }
+    }
+
+    @Test
+    public void test50_verify_security_roles() {
+        // Test that unauthorized access is properly blocked
+        Response response = webTarget
+            .path(PHYSICIAN_RESOURCE_NAME)
+            .request()
+            .get();
+        assertThat(response.getStatus(), is(401));
+    }
+}
+
+// Add ObjectMapper configuration class
+class ObjectMapperContextResolver implements jakarta.ws.rs.ext.ContextResolver<ObjectMapper> {
+    private final ObjectMapper mapper;
+
+    public ObjectMapperContextResolver() {
+        mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    }
+
+    @Override
+    public ObjectMapper getContext(Class<?> type) {
+        return mapper;
     }
 }
