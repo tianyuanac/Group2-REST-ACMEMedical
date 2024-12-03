@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: acmemedical-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: acmemedical
+      MYSQL_USER: cst8277
+      MYSQL_PASSWORD: 8277
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+      - ./src/main/resources/META-INF/sql/acmemedical-create.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ./src/main/resources/META-INF/sql/acmemedical-data.sql:/docker-entrypoint-initdb.d/2-data.sql
+
+  payara:
+    image: payara/server-full:6.2024.2-jdk21
+    container_name: acmemedical-payara
+    ports:
+      - "8080:8080"
+      - "4848:4848"
+      - "9009:9009"
+    environment:
+      - PAYARA_ARGS=--debug
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=acmemedical
+      - DB_USER=cst8277
+      - DB_PASSWORD=8277
+    depends_on:
+      - mysql

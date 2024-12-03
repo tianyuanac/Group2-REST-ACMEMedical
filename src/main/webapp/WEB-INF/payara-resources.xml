@@ -5,7 +5,7 @@
 		datasource-classname="com.mysql.cj.jdbc.MysqlConnectionPoolDataSource"
 		name="acmemedicalDB" res-type="javax.sql.DataSource">
 		<property name="databaseName" value="acmemedical"></property>
-		<property name="serverName" value="localhost"></property>
+		<property name="serverName" value="mysql"></property>
 		<property name="user" value="cst8277"></property>
 		<property name="password" value="8277"></property>
 		<property name="portNumber" value="3306"></property>
