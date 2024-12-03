@@ -26,10 +26,10 @@ import java.util.List;
 
 import static acmemedical.utility.MyConstants.*;
 
-@Path(PATIENT_RESOURCE_NAME)
+@Path(MEDICAL_TRAINING_RESOURCE_NAME)
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class PatientResource {
+public class MedicalTrainingResource {
 
     private static final Logger LOG = LogManager.getLogger();
 
@@ -40,52 +40,52 @@ public class PatientResource {
     protected SecurityContext sc;
 
     @GET
-    //Only a user with the SecurityRole ‘ADMIN_ROLE’ can get the list of all patients.
-    @RolesAllowed({ADMIN_ROLE})
-    public Response getPatients() {
-        LOG.debug("retrieving all patients ...");
-        List<Patient> patients = service.getAllPatients();
-        Response response = Response.ok(patients).build();
+    //A user with either the role ‘ADMIN_ROLE’ or ‘USER_ROLE’ can get the list of all medicalTrainings.
+    @RolesAllowed({ADMIN_ROLE, USER_ROLE})
+    public Response getMedicalTrainings() {
+        LOG.debug("retrieving all medicalTrainings ...");
+        List<MedicalTraining> medicalTrainings = service.getAllMedicalTrainings();
+        Response response = Response.ok(medicalTrainings).build();
         return response;
     }
 
     @GET
     //A user with either the role ‘ADMIN_ROLE’ or ‘USER_ROLE’ can get a specific patient.
     @RolesAllowed({ADMIN_ROLE, USER_ROLE})
-    @Path("/{patientId}")
-    public Response getMPatientById(@PathParam("patientId") int patientId) {
-        LOG.debug("Retrieving patient with id = {}", patientId);
-        Patient patient = service.getPatientById(patientId);
-        Response response = Response.ok(patient).build();
+    @Path("/{medicalTrainingId}")
+    public Response getMMedicalTrainingById(@PathParam("medicalTrainingId") int medicalTrainingId) {
+        LOG.debug("Retrieving medicalTraining with id = {}", medicalTrainingId);
+        MedicalTraining medicalTraining = service.getMedicalTrainingById(medicalTrainingId);
+        Response response = Response.ok(medicalTraining).build();
         return response;
     }
 
     @POST
     //Only a user with the SecurityRole ‘ADMIN_ROLE’ can add a new patient.
     @RolesAllowed({ADMIN_ROLE})
-    public Response addPatient(Patient newPatient) {
+    public Response addMedicalTraining(MedicalTraining newMedicalTraining) {
         Response response = null;
-        Patient newPatientWithIdTimestamps = service.persistPatient(newPatient);
-        response = Response.ok(newPatientWithIdTimestamps).build();
+        MedicalTraining newMedicalTrainingWithIdTimestamps = service.persistMedicalTraining(newMedicalTraining);
+        response = Response.ok(newMedicalTrainingWithIdTimestamps).build();
         return response;
     }
 
     @DELETE
     @Path(RESOURCE_PATH_ID_PATH)
     @RolesAllowed({ADMIN_ROLE})
-    public Response deletePatient(@PathParam(RESOURCE_PATH_ID_ELEMENT) int id) {
+    public Response deleteMedicalTraining(@PathParam(RESOURCE_PATH_ID_ELEMENT) int id) {
         LOG.debug("Attempting to delete patient with ID: " + id);
-        Patient patient = service.getPatientById(id);
+        MedicalTraining patient = service.getMedicalTrainingById(id);
 
         if (patient == null) {
-            LOG.warn("Patient with ID " + id + " not found.");
+            LOG.warn("MedicalTraining with ID " + id + " not found.");
             return Response.status(Status.NOT_FOUND)
-                    .entity("Patient not found with ID: " + id)
+                    .entity("MedicalTraining not found with ID: " + id)
                     .build();
         }
 
-        service.deletePatientById(id);
-        LOG.info("Patient with ID " + id + " successfully deleted.");
+        service.deleteMedicalTrainingById(id);
+        LOG.info("MedicalTraining with ID " + id + " successfully deleted.");
         return Response.noContent().build();
     }
 }

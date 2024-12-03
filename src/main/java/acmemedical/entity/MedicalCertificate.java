@@ -24,13 +24,13 @@ import java.io.Serializable;
 @Table(name = "medical_certificate")
 @Access(AccessType.FIELD)
 @AttributeOverride(name = "id", column = @Column(name = "certificate_id"))
-@NamedQuery(name = MedicalCertificate.ID_CARD_QUERY_NAME, query = "SELECT mc FROM MedicalCertificate mc WHERE mc.id = :id")
+@NamedQuery(name = MedicalCertificate.ID_CARD_QUERY_NAME, query = "SELECT mc FROM MedicalCertificate mc WHERE mc.id = :param1")
 public class MedicalCertificate extends PojoBase implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public static final String ID_CARD_QUERY_NAME = "MedicalCertificate.findById";
 	
 	// TODO MC03 - Add annotations for 1:1 mapping.  What should be the cascade and fetch types?
-	@OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
+	@OneToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "training_id", nullable = false)
 	private MedicalTraining medicalTraining;
 

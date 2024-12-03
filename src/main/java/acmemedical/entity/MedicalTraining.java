@@ -26,7 +26,7 @@ import jakarta.persistence.*;
 @Entity(name = "MedicalTraining")
 @Table(name = "medical_training")
 @AttributeOverride(name = "id", column = @Column(name = "training_id"))
-@NamedQuery(name = MedicalTraining.FIND_BY_ID, query = "SELECT mt FROM MedicalTraining mt WHERE mt.id = :id")
+@NamedQuery(name = MedicalTraining.FIND_BY_ID, query = "SELECT mt FROM MedicalTraining mt WHERE mt.id = :param1")
 public class MedicalTraining extends PojoBase implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public static final String FIND_BY_ID = "MedicalTraining.findById";

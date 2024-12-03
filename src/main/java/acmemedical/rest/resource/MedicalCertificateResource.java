@@ -10,7 +10,6 @@ package acmemedical.rest.resource;
 
 import acmemedical.ejb.ACMEMedicalService;
 import acmemedical.entity.*;
-import acmemedical.entity.Medicine;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.EJB;
 import jakarta.inject.Inject;
@@ -27,10 +26,10 @@ import java.util.List;
 
 import static acmemedical.utility.MyConstants.*;
 
-@Path(MEDICINE_RESOURCE_NAME)
+@Path(MEDICAL_CERTIFICATE_RESOURCE_NAME)
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class MedicineResource {
+public class MedicalCertificateResource {
 
     private static final Logger LOG = LogManager.getLogger();
 
@@ -43,51 +42,50 @@ public class MedicineResource {
     @GET
     //A user with either the role ‘ADMIN_ROLE’ or ‘USER_ROLE’ can get the list of all medicines.
     @RolesAllowed({ADMIN_ROLE, USER_ROLE})
-    public Response getMedicines() {
+    public Response getMedicalCertificates() {
         LOG.debug("retrieving all medicines ...");
-        List<Medicine> medicines = service.getAllMedicines();
-        Response response = Response.ok(medicines).build();
+        List<MedicalCertificate> medicalCertificates = service.getAllMedicalCertificates();
+        Response response = Response.ok(medicalCertificates).build();
         return response;
     }
 
     @GET
-    //A user with either the role ‘ADMIN_ROLE’ or ‘USER_ROLE’ can get a specific medicine.
+    //A user with either the role ‘ADMIN_ROLE’ or ‘USER_ROLE’ can get a specific medicalCertificate.
     @RolesAllowed({ADMIN_ROLE, USER_ROLE})
-    @Path("/{medicinesId}")
-    public Response getMedicineById(@PathParam("medicinesId") int medicinesId) {
-        LOG.debug("Retrieving medicines with id = {}", medicinesId);
-        Medicine medicine = service.getMedicineById(medicinesId);
-        Response response = Response.ok(medicine).build();
+    @Path("/{medicalCertificateId}")
+    public Response getMedicalCertificateById(@PathParam("medicalCertificateId") int medicalCertificateId) {
+        LOG.debug("Retrieving medical school with id = {}", medicalCertificateId);
+        MedicalCertificate medicalCertificate = service.getMedicalCertificateById(medicalCertificateId);
+        Response response = Response.ok(medicalCertificate).build();
         return response;
     }
 
     @POST
-    //Only a user with the SecurityRole ‘ADMIN_ROLE’ can add a new Medicine.
+    //Only a user with the SecurityRole ‘ADMIN_ROLE’ can add a new medicalCertificate.
     @RolesAllowed({ADMIN_ROLE})
-    public Response addMedicine(Medicine newMedicine) {
+    public Response addMedicalCertificate(MedicalCertificate newMedicalCertificate) {
         Response response = null;
-        Medicine newMedicineWithIdTimestamps = service.persistMedicine(newMedicine);
-        // Build a SecurityUser linked to the new physician
-        response = Response.ok(newMedicineWithIdTimestamps).build();
+        MedicalCertificate newMedicalCertificateWithIdTimestamps = service.persistMedicalCertificate(newMedicalCertificate);
+        response = Response.ok(newMedicalCertificateWithIdTimestamps).build();
         return response;
     }
 
     @DELETE
     @Path(RESOURCE_PATH_ID_PATH)
     @RolesAllowed({ADMIN_ROLE})
-    public Response deleteMedicine(@PathParam(RESOURCE_PATH_ID_ELEMENT) int id) {
-        LOG.debug("Attempting to delete medicine with ID: " + id);
-        Medicine medicine = service.getMedicineById(id);
+    public Response deleteMedicalCertificate(@PathParam(RESOURCE_PATH_ID_ELEMENT) int id) {
+        LOG.debug("Attempting to delete medicalCertificate with ID: " + id);
+        MedicalCertificate medicalCertificate = service.getMedicalCertificateById(id);
 
-        if (medicine == null) {
-            LOG.warn("Medicine with ID " + id + " not found.");
+        if (medicalCertificate == null) {
+            LOG.warn("MedicalCertificate with ID " + id + " not found.");
             return Response.status(Status.NOT_FOUND)
-                    .entity("Medicine not found with ID: " + id)
+                    .entity("MedicalCertificate not found with ID: " + id)
                     .build();
         }
 
-        service.deleteMedicineById(id);
-        LOG.info("Medicine with ID " + id + " successfully deleted.");
+        service.deleteMedicalCertificateById(id);
+        LOG.info("MedicalCertificate with ID " + id + " successfully deleted.");
         return Response.noContent().build();
     }
 }

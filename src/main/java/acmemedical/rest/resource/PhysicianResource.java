@@ -109,6 +109,24 @@ public class PhysicianResource {
         return response;
     }
 
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({ADMIN_ROLE})
+    public Response updatePhysician(@PathParam("id") int id, Physician updatedPhysician) {
+        LOG.debug("Updating physician with ID: {}", id);
+        Physician existingPhysician = service.getPhysicianById(id);
+
+        if (existingPhysician == null) {
+            return Response.status(Status.NOT_FOUND).entity("Physician not found").build();
+        }
+
+        updatedPhysician.setId(id);
+        Physician updatedEntity = service.updatePhysicianById(id, updatedPhysician);
+        return Response.ok(updatedEntity).build();
+    }
+
     @DELETE
     @Path(RESOURCE_PATH_ID_PATH)
     @RolesAllowed({ADMIN_ROLE})
