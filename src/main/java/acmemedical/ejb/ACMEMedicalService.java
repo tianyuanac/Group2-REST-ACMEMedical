@@ -446,8 +446,13 @@ public class ACMEMedicalService implements Serializable {
         Medicine medicine = newPrescription.getMedicine() != null
                 ? em.find(Medicine.class, newPrescription.getMedicine().getId())
                 : null;
+
+        newPrescription.setId(new PrescriptionPK(newPrescription.getId().getPhysicianId(), newPrescription.getId().getPatientId()));
         newPrescription.setPhysician(physician);
         newPrescription.setPatient(patient);
+        newPrescription.setMedicine(medicine);
+        newPrescription.setPrescriptionInformation(newPrescription.getPrescriptionInformation());
+        newPrescription.setNumberOfRefills(newPrescription.getNumberOfRefills());
 
         if (physician == null || patient == null) {
             throw new IllegalArgumentException("Physician or Patient not found. Cannot create Prescription.");

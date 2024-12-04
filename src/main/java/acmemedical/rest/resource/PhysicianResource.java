@@ -122,8 +122,10 @@ public class PhysicianResource {
             return Response.status(Status.NOT_FOUND).entity("Physician not found").build();
         }
 
-        updatedPhysician.setId(id);
-        Physician updatedEntity = service.updatePhysicianById(id, updatedPhysician);
+        existingPhysician.setFirstName(updatedPhysician.getFirstName());
+        existingPhysician.setLastName(updatedPhysician.getLastName());
+
+        Physician updatedEntity = service.updatePhysicianById(id, existingPhysician);
         return Response.ok(updatedEntity).build();
     }
 
